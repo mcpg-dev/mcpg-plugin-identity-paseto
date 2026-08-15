@@ -1,0 +1,14 @@
+schema: mcpg.dev/plugin/v1
+id: dev.mcpg.identity.paseto
+name: PASETO Identity Resolver
+license: BUSL-1.1
+description: |
+  Resolves caller identity from PASETO v4 tokens verified against operator-
+  supplied STATIC keys: v4.public (Ed25519 signature) or v4.local (XChaCha20
+  symmetric). Validates the registered claims (exp/iss/aud) and maps token
+  claims to subject/roles/groups/scopes/attributes. No discovery, no network —
+  pure synchronous compute. Fails closed on bad config.
+class: identity_provider
+runtime: native-cdylib-v1
+protocol_version: "1.0"
+required_capabilities: []

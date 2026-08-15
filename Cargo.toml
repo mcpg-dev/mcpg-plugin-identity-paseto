@@ -1,0 +1,26 @@
+[package]
+name = "mcpg-plugin-identity-paseto"
+version = "0.1.0-alpha.15"
+license = "BUSL-1.1"
+edition = "2024"
+description = "PASETO v4 identity_provider plugin for MCPG (dev.mcpg.identity.paseto) — verifies v4.public/v4.local tokens against static keys; no network."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mcpg-plugin-protocol = { git = "https://github.com/mcpg-dev/mcpg-plugin-protocol", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13" }
+mcpg-plugin-sdk = { git = "https://github.com/mcpg-dev/mcpg-plugin-sdk", tag = "v0.1.0-beta.13", version = "=0.1.0-beta.13", features = ["static-firstparty"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+hex = "0.4"
+metrics = "0.24"
+tracing = "0.1"
+# Pure-Rust PASETO (MIT; orion + ed25519-compact crypto, no native-tls/openssl).
+pasetors = "0.7"
+
+[features]
+default = []
+cdylib-export = []
+static-firstparty = []
