@@ -132,7 +132,7 @@ fn record_resolve_outcome(result: &IdentityResolution, elapsed: std::time::Durat
     };
     metrics::counter!("mcpg_identity_paseto_resolutions_total", "outcome" => outcome).increment(1);
     metrics::histogram!("mcpg_identity_paseto_resolve_ms").record(elapsed.as_millis() as f64);
-    if let IdentityResolution::Invalid { reason } = result {
+    if let IdentityResolution::Invalid { reason, .. } = result {
         warn!(reason = %reason, "identity.paseto: invalid token");
     }
 }
@@ -176,6 +176,7 @@ fn resolve(inner: &Inner, headers: &[(String, String)]) -> IdentityResolution {
     // acceptance. First success wins.
     let mut last = IdentityResolution::Invalid {
         reason: "no configured issuer accepted the token".to_owned(),
+        response_headers: Vec::new(),
     };
     for ci in &inner.issuers {
         match verify_against_issuer(ci, &token, &inner.resolution) {
@@ -203,6 +204,7 @@ fn verify_against_issuer(
             Err(e) => {
                 return IdentityResolution::Invalid {
                     reason: format!("not a v4.public token for issuer '{}': {e}", ci.issuer),
+                    response_headers: Vec::new(),
                 };
             }
         },
@@ -211,6 +213,7 @@ fn verify_against_issuer(
             Err(e) => {
                 return IdentityResolution::Invalid {
                     reason: format!("not a v4.local token for issuer '{}': {e}", ci.issuer),
+                    response_headers: Vec::new(),
                 };
             }
         },
@@ -221,6 +224,7 @@ fn verify_against_issuer(
         Err(e) => {
             return IdentityResolution::Invalid {
                 reason: format!("token verification failed for issuer '{}': {e}", ci.issuer),
+                response_headers: Vec::new(),
             };
         }
     };
@@ -230,6 +234,7 @@ fn verify_against_issuer(
         None => {
             return IdentityResolution::Invalid {
                 reason: "verified token carried no claims".to_owned(),
+                response_headers: Vec::new(),
             };
         }
     };
@@ -244,6 +249,7 @@ fn verify_against_issuer(
         None => {
             return IdentityResolution::Invalid {
                 reason: "could not read verified token claims".to_owned(),
+                response_headers: Vec::new(),
             };
         }
     };
@@ -259,6 +265,7 @@ fn verify_against_issuer(
         if !ok {
             return IdentityResolution::Invalid {
                 reason: format!("audience not allowed for issuer '{}'", ci.issuer),
+                response_headers: Vec::new(),
             };
         }
     }
@@ -277,6 +284,7 @@ fn map_claims(
         _ => {
             return IdentityResolution::Invalid {
                 reason: format!("missing or empty '{}' (subject) claim", m.subject_claim),
+                response_headers: Vec::new(),
             };
         }
     };

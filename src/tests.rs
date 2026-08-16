@@ -155,7 +155,9 @@ fn missing_subject_invalid() {
     c.audience("mcpg").unwrap();
     let token = pasetors::public::sign(&kp.secret, &c, None, None).unwrap();
     match resolve(&p, &token) {
-        IdentityResolution::Invalid { reason } => assert!(reason.contains("subject"), "{reason}"),
+        IdentityResolution::Invalid { reason, .. } => {
+            assert!(reason.contains("subject"), "{reason}")
+        }
         other => panic!("expected Invalid, got {other:?}"),
     }
 }
