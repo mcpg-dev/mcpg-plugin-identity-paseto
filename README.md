@@ -74,6 +74,8 @@ plugins:
 
 - `exp` is **required** by default (PASETO secure default) — a token without an
   expiry is rejected.
+- `nbf` and `iat` are optional. When present, a value in the future (or one
+  that is not RFC 3339) rejects the token.
 - For multiple acceptable audiences the token's `aud` must be one of the list.
 - Distinct from `dev.mcpg.identity.jwt` (verifies JWTs) — same trait + config
   shape, different token format.

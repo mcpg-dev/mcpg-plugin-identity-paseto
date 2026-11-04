@@ -81,6 +81,39 @@ fn v4_local_valid_resolves() {
 }
 
 #[test]
+fn a_token_without_nbf_and_iat_resolves() {
+    let kp = AsymmetricKeyPair::<V4>::generate().unwrap();
+    let p = public_plugin(&kp);
+    let mut c = claims(ISS, "mcpg", "alice");
+    c.remove_claim("nbf");
+    c.remove_claim("iat");
+    let token = pasetors::public::sign(&kp.secret, &c, None, None).unwrap();
+    assert!(
+        matches!(resolve(&p, &token), IdentityResolution::Resolved { .. }),
+        "nbf and iat are optional claims"
+    );
+}
+
+#[test]
+fn a_future_nbf_or_iat_is_refused() {
+    let kp = AsymmetricKeyPair::<V4>::generate().unwrap();
+    let p = public_plugin(&kp);
+    for claim in ["nbf", "iat"] {
+        let mut c = claims(ISS, "mcpg", "alice");
+        if claim == "nbf" {
+            c.not_before("2999-01-01T00:00:00Z").unwrap();
+        } else {
+            c.issued_at("2999-01-01T00:00:00Z").unwrap();
+        }
+        let token = pasetors::public::sign(&kp.secret, &c, None, None).unwrap();
+        assert!(
+            matches!(resolve(&p, &token), IdentityResolution::Invalid { .. }),
+            "a future {claim} must be refused"
+        );
+    }
+}
+
+#[test]
 fn wrong_public_key_invalid() {
     let signer = AsymmetricKeyPair::<V4>::generate().unwrap();
     let other = AsymmetricKeyPair::<V4>::generate().unwrap();

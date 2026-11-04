@@ -187,12 +187,35 @@ fn resolve(inner: &Inner, headers: &[(String, String)]) -> IdentityResolution {
     last
 }
 
+/// Refuse a token whose `nbf` or `iat` is in the future (or does not parse).
+/// An absent `nbf` or `iat` puts no limit; the copy gets the epoch for it, so
+/// `pasetors`' own time rules run on the claims the token carries.
+fn validate_present_time_claims(
+    claims: &pasetors::claims::Claims,
+) -> Result<(), pasetors::errors::Error> {
+    const EPOCH: &str = "1970-01-01T00:00:00Z";
+    let mut copy = claims.clone();
+    if !copy.contains_claim("nbf") {
+        copy.not_before(EPOCH)?;
+    }
+    if !copy.contains_claim("iat") {
+        copy.issued_at(EPOCH)?;
+    }
+    let mut rules = ClaimsValidationRules::new();
+    // `exp` was checked when the token was verified.
+    rules.allow_non_expiring();
+    rules.validate_claims(&copy)
+}
+
 fn verify_against_issuer(
     ci: &CompiledIssuer,
     token: &str,
     resolution: &ResolutionConfig,
 ) -> IdentityResolution {
     let mut rules = ClaimsValidationRules::new();
+    // `nbf` and `iat` are optional registered claims; the default rules
+    // refuse a token without them. They are checked below when present.
+    rules.disable_valid_at();
     rules.validate_issuer_with(&ci.issuer);
     if ci.audiences.len() == 1 {
         rules.validate_audience_with(&ci.audiences[0]);
@@ -238,6 +261,12 @@ fn verify_against_issuer(
             };
         }
     };
+    if let Err(e) = validate_present_time_claims(claims) {
+        return IdentityResolution::Invalid {
+            reason: format!("token verification failed for issuer '{}': {e}", ci.issuer),
+            response_headers: Vec::new(),
+        };
+    }
     // `Claims` serialises to its JSON object via `to_string`; parse that back to
     // a `Value` so the dotted-path claim mappers below can navigate it.
     let val: Value = match claims
