@@ -1,6 +1,6 @@
 [package]
 name = "mcpg-plugin-identity-paseto"
-version = "0.1.0-rc.5"
+version = "0.1.0"
 license = "BUSL-1.1"
 edition = "2024"
 description = "PASETO v4 identity_provider plugin for MCPG (dev.mcpg.identity.paseto) — verifies v4.public/v4.local tokens against static keys; no network."
